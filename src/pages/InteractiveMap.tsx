@@ -12,6 +12,7 @@ import {
   Search,
   Route
 } from "lucide-react";
+import MapboxMap from "@/components/MapboxMap";
 
 const InteractiveMap = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -23,7 +24,7 @@ const InteractiveMap = () => {
       id: 1,
       name: "Rumtek Monastery",
       location: "East Sikkim",
-      coordinates: [88.5562, 27.3021],
+      coordinates: [88.5562, 27.3021] as [number, number],
       description: "The largest monastery in Sikkim, seat of the Karmapa",
       rating: 4.8,
       phone: "+91-3592-252023",
@@ -35,7 +36,7 @@ const InteractiveMap = () => {
       id: 2,
       name: "Pemayangtse Monastery",
       location: "West Sikkim", 
-      coordinates: [88.2468, 27.2044],
+      coordinates: [88.2468, 27.2044] as [number, number],
       description: "One of the oldest monasteries, perfect sublime lotus",
       rating: 4.7,
       phone: "+91-3595-250263",
@@ -47,7 +48,7 @@ const InteractiveMap = () => {
       id: 3,
       name: "Tashiding Monastery",
       location: "West Sikkim",
-      coordinates: [88.2725, 27.2889],
+      coordinates: [88.2725, 27.2889] as [number, number],
       description: "Sacred monastery on a conical hilltop",
       rating: 4.6,
       phone: "+91-3595-250158",
@@ -57,64 +58,6 @@ const InteractiveMap = () => {
     },
   ];
 
-  // Simple map placeholder with interactive elements
-  const MapViewer = () => {
-    return (
-      <div className="relative w-full h-96 bg-gradient-to-br from-accent/20 to-primary/10 rounded-xl overflow-hidden shadow-card">
-        {/* Map Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 opacity-80">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_40%,rgba(120,119,198,0.3),transparent_50%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,rgba(255,165,0,0.2),transparent_50%)]" />
-        </div>
-
-        {/* Monastery Markers */}
-        {monasteries.map((monastery, index) => (
-          <div
-            key={monastery.id}
-            className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 animate-bounce"
-            style={{
-              left: `${30 + index * 20}%`,
-              top: `${40 + index * 15}%`,
-              animationDelay: `${index * 0.2}s`
-            }}
-            onClick={() => setSelectedMonastery(monastery)}
-          >
-            <div className="relative">
-              <div className="h-8 w-8 rounded-full bg-primary shadow-lg flex items-center justify-center ring-4 ring-white hover:scale-110 transition-transform">
-                <MapPin className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <div className="absolute -top-12 left-1/2 transform -translate-x-1/2 bg-white px-2 py-1 rounded-md text-xs font-medium shadow-lg whitespace-nowrap">
-                {monastery.name}
-              </div>
-            </div>
-          </div>
-        ))}
-
-        {/* Map Controls */}
-        <div className="absolute top-4 left-4 space-y-2">
-          <Button size="sm" className="bg-white text-foreground shadow-lg hover:bg-gray-50">
-            <Navigation className="h-4 w-4" />
-          </Button>
-          <Button size="sm" className="bg-white text-foreground shadow-lg hover:bg-gray-50">
-            <Route className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="absolute top-4 right-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search monasteries..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 pr-4 bg-white/90 backdrop-blur-sm"
-            />
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <div className="container px-6 py-12">
@@ -131,40 +74,13 @@ const InteractiveMap = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Map */}
         <div className="lg:col-span-2">
-          <Card className="p-6 shadow-card">
-            <MapViewer />
-            
-            <div className="mt-6 pt-6 border-t border-border">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-heading font-semibold">Route Planning</h3>
-                <div className="flex space-x-2">
-                  <Button size="sm" variant="outline">
-                    <Navigation className="mr-2 h-4 w-4" />
-                    Get Directions
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Route className="mr-2 h-4 w-4" />
-                    Plan Route
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <div className="font-semibold text-foreground">12</div>
-                  <div className="text-sm text-muted-foreground">Monasteries</div>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <div className="font-semibold text-foreground">5</div>
-                  <div className="text-sm text-muted-foreground">Districts</div>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50">
-                  <div className="font-semibold text-foreground">25+</div>
-                  <div className="text-sm text-muted-foreground">Attractions</div>
-                </div>
-              </div>
-            </div>
-          </Card>
+          <MapboxMap 
+            monasteries={monasteries}
+            selectedMonastery={selectedMonastery}
+            onSelectMonastery={setSelectedMonastery}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+          />
         </div>
 
         {/* Monastery Details */}

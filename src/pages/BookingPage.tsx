@@ -26,6 +26,7 @@ import {
   Phone,
   Mail
 } from "lucide-react";
+import PaymentModal from "@/components/PaymentModal";
 
 const BookingPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date>();
@@ -38,6 +39,8 @@ const BookingPage = () => {
     phone: "",
     specialRequests: "",
   });
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
 
   const monasteries = [
     {
@@ -142,6 +145,20 @@ const BookingPage = () => {
   };
 
   const pricing = calculateTotal();
+
+  const isFormValid = selectedMonastery && selectedDate && groupSize && 
+                     contactInfo.name && contactInfo.email && contactInfo.phone;
+
+  const handleProceedToPayment = () => {
+    if (isFormValid) {
+      setIsPaymentModalOpen(true);
+    }
+  };
+
+  const handlePaymentSuccess = () => {
+    setBookingConfirmed(true);
+    setIsPaymentModalOpen(false);
+  };
 
   return (
     <div className="container px-6 py-12">
@@ -392,7 +409,8 @@ const BookingPage = () => {
             <div className="space-y-4">
               <Button 
                 className="w-full btn-hero"
-                disabled={!selectedMonastery || !selectedDate || !groupSize}
+                disabled={!isFormValid}
+                onClick={handleProceedToPayment}
               >
                 <CreditCard className="mr-2 h-4 w-4" />
                 Proceed to Payment
@@ -432,6 +450,36 @@ const BookingPage = () => {
           </Card>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        bookingData={{
+          monasteryName: monasteries.find(m => m.id === selectedMonastery)?.name,
+          date: selectedDate,
+          groupSize,
+          totalAmount: pricing.total,
+          selectedServices,
+        }}
+        onPaymentSuccess={handlePaymentSuccess}
+      />
+
+      {/* Booking Confirmation */}
+      {bookingConfirmed && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="max-w-md w-full p-6 text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Booking Confirmed!</h2>
+            <p className="text-muted-foreground mb-4">
+              Your sacred journey has been booked successfully. Check your email for confirmation details.
+            </p>
+            <Button onClick={() => setBookingConfirmed(false)} className="w-full">
+              Continue Exploring
+            </Button>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };

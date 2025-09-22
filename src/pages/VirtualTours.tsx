@@ -17,11 +17,15 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Sphere } from "@react-three/drei";
 import * as THREE from "three";
 import monasteryInterior from "@/assets/monastery-interior.jpg";
+import AudioPlayer from "@/components/AudioPlayer";
 
 const VirtualTours = () => {
   const [selectedTour, setSelectedTour] = useState(0);
   const [isAudioOn, setIsAudioOn] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("english");
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
 
   const tours = [
     {
@@ -54,19 +58,49 @@ const VirtualTours = () => {
   ];
 
   const languages = [
-    { code: "english", name: "English", flag: "🇬🇧" },
-    { code: "hindi", name: "हिन्दी", flag: "🇮🇳" },
-    { code: "nepali", name: "नेपाली", flag: "🇳🇵" },
-    { code: "tibetan", name: "བོད་སྐད།", flag: "🏔️" },
+    { code: "english", name: "English", flag: "🇬🇧", audio: "/audio/english-narration.mp3" },
+    { code: "hindi", name: "हिन्दी", flag: "🇮🇳", audio: "/audio/hindi-narration.mp3" },
+    { code: "nepali", name: "नेपाली", flag: "🇳🇵", audio: "/audio/nepali-narration.mp3" },
+    { code: "tibetan", name: "བོད་སྐད།", flag: "🏔️", audio: "/audio/tibetan-narration.mp3" },
   ];
 
-  // Simple 360 viewer with Three.js
+  // Audio narration functionality
+  const playAudio = () => {
+    const selectedLang = languages.find(l => l.code === selectedLanguage);
+    if (selectedLang && !audioElement) {
+      const audio = new Audio(selectedLang.audio);
+      audio.loop = true;
+      setAudioElement(audio);
+      audio.play().catch(() => {
+        console.log("Audio playback failed - using mock audio");
+      });
+    } else if (audioElement) {
+      audioElement.play().catch(() => {
+        console.log("Audio playback failed - using mock audio");
+      });
+    }
+  };
+
+  const stopAudio = () => {
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+    }
+  };
+
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  // Enhanced 360 viewer with Three.js
   const VirtualTourViewer = () => {
     return (
-      <div className="relative w-full h-96 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl overflow-hidden shadow-card">
+      <div className={`relative w-full bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl overflow-hidden shadow-card transition-all duration-300 ${
+        isFullscreen ? 'fixed inset-0 z-50 rounded-none h-screen' : 'h-96'
+      }`}>
         <Canvas camera={{ position: [0, 0, 0.1], fov: 75 }}>
-          <ambientLight intensity={0.6} />
-          <pointLight position={[10, 10, 10]} />
+          <ambientLight intensity={0.8} />
+          <pointLight position={[10, 10, 10]} intensity={0.5} />
           
           {/* 360 Sphere with texture */}
           <Sphere args={[10, 60, 40]}>
@@ -82,8 +116,19 @@ const VirtualTours = () => {
             enableDamping={true}
             dampingFactor={0.05}
             rotateSpeed={0.5}
+            maxDistance={12}
+            minDistance={8}
           />
         </Canvas>
+
+        {isLoading && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <div className="text-white text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+              <p>Loading 360° Experience...</p>
+            </div>
+          </div>
+        )}
 
         {/* Tour Controls */}
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between">
@@ -91,16 +136,34 @@ const VirtualTours = () => {
             <Button 
               size="sm" 
               className="bg-black/70 text-white hover:bg-black/80"
-              onClick={() => setIsAudioOn(!isAudioOn)}
+              onClick={() => {
+                setIsAudioOn(!isAudioOn);
+                if (!isAudioOn) {
+                  playAudio();
+                } else {
+                  stopAudio();
+                }
+              }}
             >
               {isAudioOn ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
             
-            <Button size="sm" className="bg-black/70 text-white hover:bg-black/80">
+            <Button 
+              size="sm" 
+              className="bg-black/70 text-white hover:bg-black/80"
+              onClick={() => {
+                setIsLoading(true);
+                setTimeout(() => setIsLoading(false), 1500);
+              }}
+            >
               <RotateCw className="h-4 w-4" />
             </Button>
             
-            <Button size="sm" className="bg-black/70 text-white hover:bg-black/80">
+            <Button 
+              size="sm" 
+              className="bg-black/70 text-white hover:bg-black/80"
+              onClick={toggleFullscreen}
+            >
               <Maximize className="h-4 w-4" />
             </Button>
           </div>
@@ -117,7 +180,14 @@ const VirtualTours = () => {
         <div className="absolute top-4 right-4">
           <select 
             value={selectedLanguage}
-            onChange={(e) => setSelectedLanguage(e.target.value)}
+            onChange={(e) => {
+              setSelectedLanguage(e.target.value);
+              if (isAudioOn) {
+                stopAudio();
+                setAudioElement(null);
+                setTimeout(playAudio, 100);
+              }
+            }}
             className="bg-black/70 text-white text-sm rounded-lg px-3 py-2 border-0 focus:ring-2 focus:ring-primary"
           >
             {languages.map((lang) => (
@@ -127,6 +197,17 @@ const VirtualTours = () => {
             ))}
           </select>
         </div>
+
+        {/* Exit Fullscreen */}
+        {isFullscreen && (
+          <Button
+            onClick={toggleFullscreen}
+            className="absolute top-4 left-4 bg-black/70 text-white hover:bg-black/80"
+            size="sm"
+          >
+            Exit Fullscreen
+          </Button>
+        )}
       </div>
     );
   };
@@ -222,21 +303,19 @@ const VirtualTours = () => {
             {/* Narration Controls */}
             <div className="mt-6 pt-6 border-t border-border">
               <h3 className="font-heading font-semibold mb-4">Audio Narration</h3>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <Button 
-                    variant={isAudioOn ? "default" : "outline"}
-                    onClick={() => setIsAudioOn(!isAudioOn)}
-                  >
-                    {isAudioOn ? <Volume2 className="mr-2 h-4 w-4" /> : <VolumeX className="mr-2 h-4 w-4" />}
-                    {isAudioOn ? "Audio On" : "Audio Off"}
-                  </Button>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    Language: <span className="font-medium text-foreground">
-                      {languages.find(l => l.code === selectedLanguage)?.name}
-                    </span>
-                  </div>
+              
+              <AudioPlayer
+                src={languages.find(l => l.code === selectedLanguage)?.audio || ""}
+                title={`${tours[selectedTour].name} - ${languages.find(l => l.code === selectedLanguage)?.name} Narration`}
+                isActive={isAudioOn}
+                onToggle={() => setIsAudioOn(!isAudioOn)}
+              />
+              
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Language: <span className="font-medium text-foreground">
+                    {languages.find(l => l.code === selectedLanguage)?.name}
+                  </span>
                 </div>
                 
                 <div className="text-sm text-muted-foreground">

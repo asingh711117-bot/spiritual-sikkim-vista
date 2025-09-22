@@ -19,6 +19,7 @@ import {
   Filter,
   Bell
 } from "lucide-react";
+import CalendarEventModal from "@/components/CalendarEventModal";
 
 const locales = {
   "en-US": enUS,
@@ -35,6 +36,7 @@ const localizer = dateFnsLocalizer({
 const CulturalCalendar = () => {
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [view, setView] = useState<"calendar" | "list">("calendar");
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const events = [
     {
@@ -236,7 +238,10 @@ const CulturalCalendar = () => {
                   events={events}
                   startAccessor="start"
                   endAccessor="end"
-                  onSelectEvent={setSelectedEvent}
+                  onSelectEvent={(event) => {
+                    setSelectedEvent(event);
+                    setIsModalOpen(true);
+                  }}
                   eventPropGetter={eventStyleGetter}
                   className="bg-background"
                 />
@@ -245,7 +250,10 @@ const CulturalCalendar = () => {
           ) : (
             <div className="space-y-4">
               {events.map((event) => (
-                <Card key={event.id} className="card-monastery cursor-pointer" onClick={() => setSelectedEvent(event)}>
+                <Card key={event.id} className="card-monastery cursor-pointer" onClick={() => {
+                  setSelectedEvent(event);
+                  setIsModalOpen(true);
+                }}>
                   <div className="flex items-start space-x-4">
                     <div className="flex-shrink-0">
                       <div className="h-12 w-12 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -361,6 +369,13 @@ const CulturalCalendar = () => {
               </div>
             </Card>
           )}
+
+          {/* Event Modal */}
+          <CalendarEventModal
+            event={selectedEvent}
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+          />
         </div>
       </div>
     </div>
